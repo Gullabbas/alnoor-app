@@ -93,9 +93,9 @@ class _DeviceFrameWrapperState extends ConsumerState<DeviceFrameWrapper> {
     final media = MediaQuery.of(context);
     final isMobilePlatform = defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android;
-    final isNarrowScreen = media.size.width < 800;
+    final isNarrowScreen = media.size.width < 900;
 
-    // Real mobile devices (iPhone / Android) and screens < 800px:
+    // Real mobile devices (iPhone / Android) and screens < 900px:
     // Render 100% full-bleed edge-to-edge native mobile UI.
     // Zero outer frame, zero background watermark, zero top menu bar covering the screen.
     if (isMobilePlatform || isNarrowScreen) {
@@ -149,52 +149,53 @@ class _DeviceFrameWrapperState extends ConsumerState<DeviceFrameWrapper> {
             ),
           ),
 
-          // Faint Al Noor branding watermark
-          Positioned(
-            left: 40,
-            bottom: 40,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/branding/logo-alnoor.png',
-                      height: 48,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.local_hospital_rounded,
-                        color: AppColors.brandCopper,
-                        size: 40,
+          // Faint Al Noor branding watermark (Desktop only, wide screens only)
+          if (media.size.width >= 1150)
+            Positioned(
+              left: 40,
+              bottom: 40,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Image.asset(
+                        'assets/branding/logo-alnoor.png',
+                        height: 48,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.local_hospital_rounded,
+                          color: AppColors.brandCopper,
+                          size: 40,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'AL NOOR DIAGNOSTIC CENTRE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
+                      const SizedBox(width: 14),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AL NOOR DIAGNOSTIC CENTRE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Better Diagnosis, Healthier Life • 40+ Years of Trust',
-                          style: TextStyle(
-                            color: AppColors.brandCopper,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                          Text(
+                            'Better Diagnosis, Healthier Life • 40+ Years of Trust',
+                            style: TextStyle(
+                              color: AppColors.brandCopper,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
 
           // Centered Phone Viewport
           Center(
@@ -341,14 +342,17 @@ class _DeviceFrameWrapperState extends ConsumerState<DeviceFrameWrapper> {
   }
 }
 
-class _PhoneStatusBar extends StatelessWidget {
+class _PhoneStatusBar extends ConsumerWidget {
   final DateTime currentTime;
 
   const _PhoneStatusBar({required this.currentTime});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final timeStr = DateFormat('h:mm').format(currentTime);
+    final themeMode = ref.watch(desktopThemeToggleProvider);
+    final isDark = themeMode == ThemeMode.dark;
+    final fgColor = isDark ? Colors.white70 : Colors.black87;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -359,8 +363,8 @@ class _PhoneStatusBar extends StatelessWidget {
           // Time
           Text(
             timeStr,
-            style: const TextStyle(
-              color: Colors.black87,
+            style: TextStyle(
+              color: fgColor,
               fontSize: 14,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.2,
@@ -392,13 +396,13 @@ class _PhoneStatusBar extends StatelessWidget {
           ),
 
           // Signal, Wi-Fi, Battery icons
-          const Row(
+          Row(
             children: [
-              Icon(Icons.signal_cellular_4_bar, size: 14, color: Colors.black87),
-              SizedBox(width: 4),
-              Icon(Icons.wifi, size: 14, color: Colors.black87),
-              SizedBox(width: 5),
-              Icon(Icons.battery_full_rounded, size: 18, color: Colors.black87),
+              Icon(Icons.signal_cellular_4_bar, size: 14, color: fgColor),
+              const SizedBox(width: 4),
+              Icon(Icons.wifi, size: 14, color: fgColor),
+              const SizedBox(width: 5),
+              Icon(Icons.battery_full_rounded, size: 18, color: fgColor),
             ],
           ),
         ],
