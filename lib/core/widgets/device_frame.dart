@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -67,6 +66,7 @@ class _DeviceFrameWrapperState extends ConsumerState<DeviceFrameWrapper> {
   Timer? _clockTimer;
   DateTime _now = DateTime.now();
   bool _showCheatSheet = false;
+  bool _isDockExpanded = false;
 
   @override
   void initState() {
@@ -90,9 +90,12 @@ class _DeviceFrameWrapperState extends ConsumerState<DeviceFrameWrapper> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final isDesktop = kIsWeb || media.size.width > 500;
+    // Real mobile devices and mobile browsers (screen width <= 768px):
+    // Render 100% full-bleed edge-to-edge native mobile UI.
+    // No outer frame, no background watermark, no top dock covering the screen.
+    final isWideDesktop = media.size.width > 768;
 
-    if (!isDesktop) {
+    if (!isWideDesktop) {
       return widget.child;
     }
 
@@ -267,15 +270,54 @@ class _DeviceFrameWrapperState extends ConsumerState<DeviceFrameWrapper> {
             ),
           ),
 
-          // Floating Desktop Testing Toolbar Dock
+          // Floating Desktop Testing Toolbar Dock (Hidden by default, expands on click)
           Positioned(
             right: 28,
             top: 28,
-            child: _DesktopDock(
-              onToggleCheatSheet: () {
-                setState(() => _showCheatSheet = !_showCheatSheet);
-              },
-            ),
+            child: _isDockExpanded
+                ? _DesktopDock(
+                    onToggleCheatSheet: () {
+                      setState(() => _showCheatSheet = !_showCheatSheet);
+                    },
+                    onCollapse: () {
+                      setState(() {
+                        _isDockExpanded = false;
+                        _showCheatSheet = false;
+                      });
+                    },
+                  )
+                : InkWell(
+                    onTap: () => setState(() => _isDockExpanded = true),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF221C1E).withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF4A3E42)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.tune_rounded, size: 15, color: AppColors.brandCopper),
+                          SizedBox(width: 8),
+                          Text(
+                            'Demo Tools',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Colors.white54),
+                        ],
+                      ),
+                    ),
+                  ),
           ),
 
           // Credentials Cheat Sheet Overlay
@@ -364,8 +406,12 @@ class _PhoneStatusBar extends StatelessWidget {
 
 class _DesktopDock extends ConsumerWidget {
   final VoidCallback onToggleCheatSheet;
+  final VoidCallback onCollapse;
 
-  const _DesktopDock({required this.onToggleCheatSheet});
+  const _DesktopDock({
+    required this.onToggleCheatSheet,
+    required this.onCollapse,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -444,6 +490,16 @@ class _DesktopDock extends ConsumerWidget {
                 }
               },
             ),
+          ),
+          const _DockDivider(),
+
+          // Hide / Collapse button
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 16, color: Colors.white70),
+            tooltip: 'Collapse Tools',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            onPressed: onCollapse,
           ),
         ],
       ),
