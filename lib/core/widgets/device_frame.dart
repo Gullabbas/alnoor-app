@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -90,12 +91,14 @@ class _DeviceFrameWrapperState extends ConsumerState<DeviceFrameWrapper> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    // Real mobile devices and mobile browsers (screen width <= 768px):
-    // Render 100% full-bleed edge-to-edge native mobile UI.
-    // No outer frame, no background watermark, no top dock covering the screen.
-    final isWideDesktop = media.size.width > 768;
+    final isMobilePlatform = defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android;
+    final isNarrowScreen = media.size.width < 800;
 
-    if (!isWideDesktop) {
+    // Real mobile devices (iPhone / Android) and screens < 800px:
+    // Render 100% full-bleed edge-to-edge native mobile UI.
+    // Zero outer frame, zero background watermark, zero top menu bar covering the screen.
+    if (isMobilePlatform || isNarrowScreen) {
       return widget.child;
     }
 
